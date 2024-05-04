@@ -24,7 +24,7 @@ from collections import Counter
 
 load_dotenv()
 # Configure API client with your API key
-genai.configure(api_key=os.getenv("API_KEY"))
+genai.configure(api_key=os.environ.get('API_KEY'))
 emotions = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
 emojis = {
     "neutral": "😐",
