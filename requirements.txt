@@ -13,5 +13,3 @@ wave
 sounddevice
 numpy
 nltk
-portaudio19-dev
-python3-all-dev
