@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import streamlit as st
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
@@ -22,7 +21,6 @@ import nltk
 from nltk.tokenize import word_tokenize
 from collections import Counter
 
-load_dotenv()
 # Configure API client with your API key
 genai.configure(api_key=os.environ.get('API_KEY'))
 emotions = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
