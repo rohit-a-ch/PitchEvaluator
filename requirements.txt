@@ -8,7 +8,6 @@ transformers
 tensorflow
 keras
 generativeai
-pyaudio==0.2.11
 wave
 sounddevice
 numpy
