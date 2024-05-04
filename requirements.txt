@@ -7,7 +7,7 @@ torch
 transformers
 tensorflow
 keras
-generativeai
+google-generativeai
 wave
 sounddevice
 numpy
