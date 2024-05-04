@@ -1,0 +1,17 @@
+streamlit
+plotly
+matplotlib
+threading
+librosa
+noisereduce
+torch
+transformers
+tensorflow
+keras
+pyaudio
+wave
+sounddevice
+numpy
+datetime
+nltk
+python-dotenv
