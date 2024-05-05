@@ -43,11 +43,11 @@ filler_words = ['um', 'uh', 'well', 'like', 'you know', 'so', 'basically', 'actu
 # Increase TensorFlow logging level
 tf.get_logger().setLevel(logging.ERROR)
 
-# Global variables for audio recording
-CHUNK = 1024
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
+# # Global variables for audio recording
+# CHUNK = 1024
+# FORMAT = pyaudio.paInt16
+# CHANNELS = 1
+# RATE = 44100
 
 def transcribe_audio(audio):
     model="facebook/wav2vec2-large-960h-lv60-self"
