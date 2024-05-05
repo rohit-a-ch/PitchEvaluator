@@ -95,49 +95,49 @@ def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
     generated_text = response.parts[0].text
     return generated_text
 
-def record_audio(duration, stop_event):
-    frames = []
+# def record_audio(duration, stop_event):
+#     frames = []
 
-    def callback(indata, frames, time, status):
-        frames.append(indata.copy())
+#     def callback(indata, frames, time, status):
+#         frames.append(indata.copy())
 
-    # Open stream
-    with sd.InputStream(channels=CHANNELS, samplerate=RATE, callback=callback):
-        info = st.empty()
-        time_left = st.empty()
+#     # Open stream
+#     with sd.InputStream(channels=CHANNELS, samplerate=RATE, callback=callback):
+#         info = st.empty()
+#         time_left = st.empty()
 
-        # Record audio until stop event is set
-        start_time = time.time()
-        while not stop_event.is_set():
-            elapsed_time = time.time() - start_time
-            remaining_time = duration - elapsed_time
-            info.info("Recording...")
-            if remaining_time <= 30:
-                time_left.warning(f"Time remaining: {int(remaining_time)} secs")
-            else:
-                time_left.text(f"Time remaining: {int(remaining_time)} secs")
+#         # Record audio until stop event is set
+#         start_time = time.time()
+#         while not stop_event.is_set():
+#             elapsed_time = time.time() - start_time
+#             remaining_time = duration - elapsed_time
+#             info.info("Recording...")
+#             if remaining_time <= 30:
+#                 time_left.warning(f"Time remaining: {int(remaining_time)} secs")
+#             else:
+#                 time_left.text(f"Time remaining: {int(remaining_time)} secs")
 
-            if remaining_time <= 0:
-                stop_event.set()
+#             if remaining_time <= 0:
+#                 stop_event.set()
 
-            time.sleep(0.1)
+#             time.sleep(0.1)
 
-        if stop_event.is_set():
-            time_left.text("")
-            info.success("Recording completed!")
-            time.sleep(3)
-            info.text("")
+#         if stop_event.is_set():
+#             time_left.text("")
+#             info.success("Recording completed!")
+#             time.sleep(3)
+#             info.text("")
 
-    # Convert frames to a single byte stream
-    audio_data = np.concatenate(frames, axis=0)
-    audio_bytes = io.BytesIO()
-    with wave.open(audio_bytes, 'wb') as wf:
-        wf.setnchannels(CHANNELS)
-        wf.setsampwidth(2)  # 16-bit encoding
-        wf.setframerate(RATE)
-        wf.writeframes(audio_data.tobytes())
+#     # Convert frames to a single byte stream
+#     audio_data = np.concatenate(frames, axis=0)
+#     audio_bytes = io.BytesIO()
+#     with wave.open(audio_bytes, 'wb') as wf:
+#         wf.setnchannels(CHANNELS)
+#         wf.setsampwidth(2)  # 16-bit encoding
+#         wf.setframerate(RATE)
+#         wf.writeframes(audio_data.tobytes())
 
-    return audio_bytes.getvalue()
+#     return audio_bytes.getvalue()
 
 def countdown_timer(duration, stop_event):
     remaining_text = st.empty()
