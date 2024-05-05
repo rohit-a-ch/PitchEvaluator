@@ -50,7 +50,7 @@ tf.get_logger().setLevel(logging.ERROR)
 # RATE = 44100
 
 def transcribe_audio(audio):
-    model="facebook/wav2vec2-large-960h-lv60-self"
+    model="facebook/wav2vec2-base-960h"
     # Load the tokenizer/feature extractor
     tokenizer=Wav2Vec2Tokenizer.from_pretrained(model)
     # Load the speech-to-text model
