@@ -309,7 +309,7 @@ def main():
                                             with col2:
                                                     st.write(f" {i*15}-{(i+1)*15} seconds")
                                 with f:
-                                    filler_words_count=Counter(token.lower() for token in word_tokenize(extracted_text) if token.lower() in filler_words)
+                                    filler_words_count=Counter(token.lower() for token in TreebankWordTokenizer().tokenize(extracted_text) if token.lower() in filler_words)
                                     filler_words_chart=go.Figure(go.Bar(x=list(filler_words_count.keys()),y=list(filler_words_count.values())),layout=dict(barcornerradius=15),)
                                     filler_words_chart.update_layout(title='Filler Words Count',xaxis_title='Filler Words',yaxis_title='Count',xaxis=dict(showline=False))
                                     st.plotly_chart(filler_words_chart,use_container_width=True)
