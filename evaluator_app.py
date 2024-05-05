@@ -157,7 +157,7 @@ def countdown_timer(duration, stop_event):
             time.sleep(1)
 
 def classify_audio_segments(audio, sr, segment_duration=15):
-    model = load_model("D:\ElevatorPitchEvaluator\model\ser_cnn_model.h5")
+    model = load_model("model/ser_cnn_model.h5")
     # Calculate number of segments
     segment_length = segment_duration * sr
     num_segments = len(audio) // segment_length
