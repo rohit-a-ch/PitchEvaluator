@@ -16,7 +16,6 @@ import google.generativeai as genai
 import io
 import os
 import time
-import pyaudio
 import wave
 import sounddevice as sd
 import numpy as np
