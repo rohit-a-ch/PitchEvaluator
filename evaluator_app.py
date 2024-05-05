@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
 import streamlit as st
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import threading
 import librosa
+from audio_recorder_streamlit import audio_recorder
 import noisereduce
 import torch
 from transformers import Wav2Vec2Tokenizer, Wav2Vec2ForCTC
@@ -21,8 +23,9 @@ import nltk
 from nltk.tokenize import word_tokenize
 from collections import Counter
 
+load_dotenv()
 # Configure API client with your API key
-genai.configure(api_key=os.environ.get('API_KEY'))
+genai.configure(api_key=os.getenv("API_KEY"))
 emotions = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
 emojis = {
     "neutral": "😐",
@@ -63,14 +66,12 @@ def transcribe_audio(audio):
     return transcription
 
 def get_audio_duration(audio_bytes):
+    RATE = 44100
     audio_bytes.seek(0)
     raw_audio = audio_bytes.read()
-    
-    # Load raw audio data using librosa
     audio, sr = librosa.load(io.BytesIO(raw_audio), sr=16000)
     duration = librosa.get_duration(y=audio, sr=sr)
-
-    return audio, duration, sr
+    return audio,duration, sr
 
 def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
     # Tokenize the text
@@ -94,54 +95,44 @@ def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
 def record_audio(duration, stop_event):
     frames = []
 
-    # Initialize PyAudio
-    audio = pyaudio.PyAudio()
+    def callback(indata, frames, time, status):
+        frames.append(indata.copy())
 
     # Open stream
-    stream = audio.open(format=FORMAT,
-                        channels=CHANNELS,
-                        rate=RATE,
-                        input=True,
-                        frames_per_buffer=CHUNK)
+    with sd.InputStream(channels=CHANNELS, samplerate=RATE, callback=callback):
+        info = st.empty()
+        time_left = st.empty()
 
-    info = st.empty()
-    time_left = st.empty()
+        # Record audio until stop event is set
+        start_time = time.time()
+        while not stop_event.is_set():
+            elapsed_time = time.time() - start_time
+            remaining_time = duration - elapsed_time
+            info.info("Recording...")
+            if remaining_time <= 30:
+                time_left.warning(f"Time remaining: {int(remaining_time)} secs")
+            else:
+                time_left.text(f"Time remaining: {int(remaining_time)} secs")
 
-    # Record audio until stop event is set
-    start_time = time.time()
-    while not stop_event.is_set():
-        data = stream.read(CHUNK)
-        frames.append(data)
-        elapsed_time = time.time() - start_time
-        remaining_time = duration - elapsed_time
-        info.info("Recording...")
-        if remaining_time <= 30:
-            time_left.warning(f"Time remaining: {int(remaining_time)} secs")
-        else:
-            time_left.text(f"Time remaining: {int(remaining_time)} secs")
+            if remaining_time <= 0:
+                stop_event.set()
 
-        if remaining_time <= 0:
-            stop_event.set()
+            time.sleep(0.1)
 
-    if stop_event.is_set():
-        time_left.text("")
-        info.success("Recording completed!")
-        time.sleep(3)
-        info.text("")
-
-    # Stop and close the stream
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
+        if stop_event.is_set():
+            time_left.text("")
+            info.success("Recording completed!")
+            time.sleep(3)
+            info.text("")
 
     # Convert frames to a single byte stream
+    audio_data = np.concatenate(frames, axis=0)
     audio_bytes = io.BytesIO()
-    wf = wave.open(audio_bytes, 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(audio.get_sample_size(FORMAT))
-    wf.setframerate(RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
+    with wave.open(audio_bytes, 'wb') as wf:
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(2)  # 16-bit encoding
+        wf.setframerate(RATE)
+        wf.writeframes(audio_data.tobytes())
 
     return audio_bytes.getvalue()
 
@@ -194,7 +185,7 @@ def classify_audio_segments(audio, sr, segment_duration=15):
     return predictions
 
 def main():
-    
+    audio_data=None
     st.set_page_config(layout="wide")
     if 'name_submitted' not in st.session_state:
         with st.container():
@@ -239,9 +230,11 @@ def main():
                         st.session_state.scenario_title=scenarios[s]['title']
                         st.session_state.scenario=scenarios[s]['scenario']
                         selected_scenario=scenarios[s]['title']
+                        audio_data=None
+                        st.session_state.audio_recorded = False  # Reset flag for audio recording
                         #sidebar_placeholder.success(selected_scenario)
                         st.success("Selected")
-                        st.session_state.audio_recorded = False  # Reset flag for audio recording
+                        
         # Create two columns 
         pitch_evaluation, record_speech = st.columns([2,1],gap="small")
 
@@ -258,25 +251,24 @@ def main():
             if "scenario_selected" in st.session_state and st.session_state.scenario_selected:
                 st.text("")
                 st.header("Record your pitch")
-                duration = st.slider("Set Recording Duration (seconds)", min_value=60, max_value=90, value=60)
-                stop_event = st.session_state.stop_event = threading.Event()
-                r_btn, s_btn = st.columns([3,1])
-                record_btn = r_btn.button("Record", key="record_button")
-                stop_btn = s_btn.button("Cancel", key="stop_button")
-                if record_btn:
-                    stop_event.clear()
-                    audio_data = record_audio(duration+1, stop_event)
-                    if audio_data:
+                #st.session_state.duration = st.slider("Set Recording Duration (seconds)", min_value=10, max_value=90, value=60)
+                audio_data = audio_recorder(
+                                            text="Click To Start / Stop Recording",
+                                            sample_rate=44_100,  # Text displayed on the button (default: "Click to record")
+                                            recording_color="#e8b62c",  # Color for the recording state (default: "#ff0000")
+                                            neutral_color="#6aa36f",  # Color for the neutral state (default: "#d3d3d3")  # Font Awesome icon name for the button (default: "microphone")
+                                            icon_size="2x",  # Size of the button icon (default: "3x")
+                                            pause_threshold=5
+                                        )
+                if audio_data!=None:
                         st.session_state.audio_recorded=True
-                        st.session_state.recorded_audio = io.BytesIO(audio_data)
-                        print("Recorded",st.session_state.recorded_audio)
-                elif stop_btn:
-                    stop_event.set()
+                        st.session_state.recorded_audio =  io.BytesIO(audio_data)
+                        #print("Recorded",st.session_state.recorded_audio)
                     
         if "scenario_selected" in st.session_state and st.session_state.scenario_selected:
             # Wait for the specified duration and then stop recording
                 if "audio_recorded" in st.session_state and st.session_state.audio_recorded:
-                    st.session_state.audio, st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
+                    st.session_state.audio,st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
                     st.subheader("Your Pitch audio")
                     st.audio( st.session_state.audio, format="audio/wav",sample_rate=st.session_state.sr)
                     
