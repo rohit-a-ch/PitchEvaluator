@@ -191,6 +191,7 @@ def classify_audio_segments(audio, sr, segment_duration=15):
     return predictions
 
 def main():
+    nltk.download('punkt')
     audio_data=None
     st.set_page_config(layout="wide")
     if 'name_submitted' not in st.session_state:
