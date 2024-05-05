@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import streamlit as st
+import logging
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import threading
@@ -8,6 +9,7 @@ from audio_recorder_streamlit import audio_recorder
 import noisereduce
 import torch
 from transformers import Wav2Vec2Tokenizer, Wav2Vec2ForCTC
+import tensorflow as tf
 from tensorflow import keras
 from keras.models import load_model
 import google.generativeai as genai
@@ -39,7 +41,8 @@ emojis = {
 }
 # Define a list of common filler words
 filler_words = ['um', 'uh', 'well', 'like', 'you know', 'so', 'basically', 'actually', 'right', 'I mean']
-
+# Increase TensorFlow logging level
+tf.get_logger().setLevel(logging.ERROR)
 
 # Global variables for audio recording
 CHUNK = 1024
@@ -177,10 +180,13 @@ def classify_audio_segments(audio, sr, segment_duration=15):
         x_predict.append(mfccs)
         # Predict emotion label for segment
 
-        prediction = model.predict(np.array(x_predict))
-        print(np.argmax(prediction))
-        predicted_label = emotions[np.argmax(prediction)]
-        predictions.append(predicted_label)
+        try:
+            prediction = model.predict(np.array(x_predict))
+            predicted_label = emotions[np.argmax(prediction)]
+            predictions.append(predicted_label)
+        except Exception as e:
+            st.error(f"Error occurred while classifying audio segment: {e}")
+            break
 
     return predictions
 
