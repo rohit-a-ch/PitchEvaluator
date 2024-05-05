@@ -276,11 +276,12 @@ def main():
         if "scenario_selected" in st.session_state and st.session_state.scenario_selected:
             # Wait for the specified duration and then stop recording
                 if "audio_recorded" in st.session_state and st.session_state.audio_recorded:
-                    st.session_state.audio,st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
-                    st.subheader("Your Pitch audio")
-                    st.audio( st.session_state.audio, format="audio/wav",sample_rate=st.session_state.sr)
-                    
-                    st.write(f"Duration: {round(st.session_state.duration,2)} seconds")
+                    with st.spinner("Preparing audio...."):
+                        st.session_state.audio,st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
+                        st.subheader("Your Pitch audio")
+                        st.audio( st.session_state.audio, format="audio/wav",sample_rate=st.session_state.sr)
+                        
+                        st.write(f"Duration: {round(st.session_state.duration,2)} seconds")
                     
                     evaluate_btn=st.button("Evaluate", key="evaluate_button",use_container_width=True)
                     if evaluate_btn:
