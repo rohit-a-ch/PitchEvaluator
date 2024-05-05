@@ -3,7 +3,6 @@ plotly
 matplotlib
 librosa
 noisereduce
-pyaudio
 torch
 transformers
 tensorflow
