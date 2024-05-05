@@ -23,6 +23,7 @@ import numpy as np
 from datetime import datetime
 import nltk 
 from nltk.tokenize import word_tokenize
+from nltk.tokenize import TreebankWordTokenizer
 from collections import Counter
 
 load_dotenv()
@@ -78,7 +79,8 @@ def get_audio_duration(audio_bytes):
 
 def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
     # Tokenize the text
-    tokens = word_tokenize(extracted_text)
+    tokenizer=TreebankWordTokenizer()
+    tokens = tokenizer.tokenize(extracted_text)
 
     # Count the occurence of filler words
     filler_word_counts = Counter(token.lower() for token in tokens if token.lower() in filler_words)
