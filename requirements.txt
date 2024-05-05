@@ -13,3 +13,4 @@ wave
 sounddevice
 numpy
 nltk
+python-dotenv
