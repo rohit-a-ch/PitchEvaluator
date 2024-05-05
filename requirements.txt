@@ -14,3 +14,4 @@ sounddevice
 numpy
 nltk
 python-dotenv
+audio-recorder-streamlit
