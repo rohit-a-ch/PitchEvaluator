@@ -214,7 +214,7 @@ def main():
             submit_btn=st.button("Submit", key="welcome_submit",use_container_width=True)
             if submit_btn or st.session_state.name:
                 st.session_state.name_submitted=True
-                st.experimental_rerun() # Rerun to display the main
+                st.rerun() # Rerun to display the main
     else:
         username=st.session_state.name
         with st.sidebar:
@@ -222,7 +222,7 @@ def main():
             if leave:
                 del st.session_state['name_submitted']
                 del st.session_state['name']
-                st.experimental_rerun()  # Rerun to display the first page
+                st.rerun()  # Rerun to display the first page
             # Add a placeholder at the top of the sidebar
             sidebar_placeholder = st.sidebar.empty()
             scenarios={"Scenario 1": {"title":"Networking Event","scenario":"You're at a conference or industry gathering and bump into someone interesting. You have a limited window to make a strong impression and spark a conversation."},
