@@ -27,6 +27,7 @@ from collections import Counter
 load_dotenv()
 # Configure API client with your API key
 genai.configure(api_key=os.getenv("API_KEY"))
+model = whisper.load_model("base")
 emotions = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
 emojis = {
     "neutral": "😐",
@@ -49,22 +50,32 @@ tf.get_logger().setLevel(logging.ERROR)
 # CHANNELS = 1
 # RATE = 44100
 
-def transcribe_audio(audio):
-    model="facebook/wav2vec2-large-960h-lv60-self"
-    # Load the tokenizer/feature extractor
-    tokenizer=Wav2Vec2Tokenizer.from_pretrained(model)
-    # Load the speech-to-text model
-    model=Wav2Vec2ForCTC.from_pretrained(model)
+# def transcribe_audio(audio):
+#     model="facebook/wav2vec2-large-960h-lv60-self"
+#     # Load the tokenizer/feature extractor
+#     tokenizer=Wav2Vec2Tokenizer.from_pretrained(model)
+#     # Load the speech-to-text model
+#     model=Wav2Vec2ForCTC.from_pretrained(model)
 
-    # Perform speech-to-text
-    input_values = tokenizer(audio, return_tensors="pt").input_values
-    # Forward pass
-    with torch.no_grad():
-            logits = model(input_values).logits
-    predicted_ids=torch.argmax(logits,dim=-1)
+#     # Perform speech-to-text
+#     input_values = tokenizer(audio, return_tensors="pt").input_values
+#     # Forward pass
+#     with torch.no_grad():
+#             logits = model(input_values).logits
+#     predicted_ids=torch.argmax(logits,dim=-1)
 
-    # Decode the predicted ids token into text
-    transcription=tokenizer.batch_decode(predicted_ids)[0]
+#     # Decode the predicted ids token into text
+#     transcription=tokenizer.batch_decode(predicted_ids)[0]
+#     return transcription
+
+def transcribe_audio(audio_path):
+
+    # Transcribe the audio file
+    result = model.transcribe(audio_path)
+    
+    # Extract the transcription text
+    transcription = result["text"]
+    
     return transcription
 
 def get_audio_duration(audio_bytes):
