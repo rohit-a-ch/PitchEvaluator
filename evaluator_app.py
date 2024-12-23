@@ -25,6 +25,7 @@ from nltk.tokenize import word_tokenize
 from nltk.tokenize import TreebankWordTokenizer
 from collections import Counter
 import whisper
+from wordcloud import WordCloud
 
 load_dotenv()
 # Configure API client with your API key
@@ -88,6 +89,31 @@ def get_audio_duration(audio_bytes):
     duration = librosa.get_duration(y=audio, sr=sr)
     return audio,duration, sr
 
+def calculate_speech_rate(text,duration):
+    if duration<=0:
+        st.error("Audio duration must be positive.")
+    word_count=len(text.split())
+
+    speech_rate=word_count/duration * 60
+
+    thresholds={
+        "Very Slow":100,
+        "Slow": 150,
+        "Normal":220,
+        "Fast": 250,
+        "Very Fast":300
+    }
+
+    descriptive_label="Unknown"
+    for label,threshold in thresholds.items():
+        if speech_rate<threshold:
+            descriptive_label = label
+            break
+        elif(speech_rate>300):
+            descriptive_label = "Very Fast"
+            
+    return round(speech_rate),descriptive_label
+
 def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
     # Tokenize the text
     tokenizer=TreebankWordTokenizer()
@@ -98,9 +124,64 @@ def evaluate_elevator_pitch(emotions, extracted_text, duration, username):
 
     # Load the generative model
     model = genai.GenerativeModel('models/gemini-pro')
-    prompt = f"You are an expert evaluator, tasked with assessing a pitch delivered by me [Name:{username}] for the {st.session_state.scenario_title} scenario.  Your role is to strictly act as an expert evaluator and provide feedback on various aspects of my pitch.\n\nMy goal is to capture attention and leave a lasting impression. Based on my speech for that particular {st.session_state.scenario_title} scenario, consider required aspects such as clarity, conciseness, and persuasiveness.\n\nYour evaluation should include the following each with proper scores, feedback with detail and more examples with terms/words/sentence that is used or what can be used/removed/modified to my pitch:\n\n1. Check Introduction (If anything to be added/removed/modified to my pitch for that particular scenario {st.session_state.scenario_title})\n\n 1.1 Initial Greeting: Strictly evaluate if I provided a proper initial greeting whatever required for that scenario '{st.session_state.scenario}'.\n\n 1.2 About Yourself: (If required) Evaluate if I provided my name, current role,background, experience, skills, and accomplishments. \n\n 1.3 Transition to pitch: Strictly assess the smoothness of the transition from the initial greeting to my main pitch.\n\n2. Content/Message\n\n 2.1 Problem & Need: Strictly assess does it clearly identify a specific problem?,does it establish the urgency or importance of addressing this problem? \n\n 2.2 Explained the benefit/payoff: Strictly determine if I effectively explained the benefit or payoff of my project.\n\n 2.3 Relayed relevant features: Strictly evaluate if I relayed relevant features.\n\n3. Close\n\n 3.1 Asked for the next step: Assess if I asked for the next step, such as a call or interview.\n\n 3.2 Clear Ending Evaluate if I provided a clear ending to my pitch that is expected for that particular scenario '{st.session_state.scenario_title}'.\n\n4. Communication: \n\n 4.1 Verbiage: Assess the choice of words and whether they were concise and professional if requried for that particular scenario '{st.session_state.scenario_title}'.\n\n 4.2 Time: Assess if I kept within the time limit specified (between 60 and 90 seconds).\n\n4.3 Filler Words: Asses if I used these {filler_word_counts} for many times.\n\n Emotions: Assess from the predicted emotions if I kept with the right emotions for the scenario.\n\nRelevancy: Strictly assess the context of the pitch provided by me is relevant to the exact required context of the scenario which is '[{st.session_state.scenario}]'. \n\nEvaluation Instructions:\nStrictly provide scores for that particular scenario{st.session_state.scenario_title} on a scale of 0-10 for each item, with 10 being the best possible score and 0 representing the absence of the skill or behavior being evaluated.\nAdditionally, provide relevant examples of words or sentences and compare with those used by me.\nYour assessment of the pitch's strengths and areas for improvement(If required) or suggested improvements(If required) where I missed and that's necessary for that scenario '{st.session_state.scenario_title}' with relevant examples, will provide valuable insights for refining future communication efforts(If required).Do not use NA(Not Applicable) for scores. Dont respond as third person like ""the speaker"",respond like mentioning ""you"" and evaluate as me.\n\n\n You must give me an example of how the pitch can be be delivered with proper phrases/terms, covering all the above aspects mentioned in evaluation within specified duration."    # Construct the prompt for the elevator pitch
-    prompt_with_speech = f"{prompt}\n\nScenario I selected:'{st.session_state.scenario}'.\n\n \n\nMy Pitch extracted from audio:\n{extracted_text}\n\nPredicted Emotions from audio:{emotions}\nDuration of the my pitch/speech: {duration} seconds\n\n. "
-   
+    prompt = (
+        f"You are an expert evaluator, tasked with assessing a pitch delivered by me [Name:{username}] "
+        f"for the {st.session_state.scenario_title} scenario. Your role is to strictly act as an expert evaluator "
+        f"and provide feedback on various aspects of my pitch.\n\n"
+        
+        f"My goal is to capture attention and leave a lasting impression. Based on my speech for that particular "
+        f"{st.session_state.scenario_title} scenario, consider required aspects such as clarity, conciseness, and persuasiveness.\n\n"
+        
+        f"Your evaluation should include the following each with proper scores, feedback with detail and more examples "
+        f"with terms/words/sentences that are used or what can be used/removed/modified to my pitch:\n\n"
+        
+        f"1. Check Introduction (If anything to be added/removed/modified to my pitch for that particular scenario {st.session_state.scenario_title})\n\n"
+        f"  1.1 Initial Greeting: Strictly evaluate if I provided a proper initial greeting whatever required for that scenario '{st.session_state.scenario}'.\n\n"
+        f"  1.2 About Yourself: (If required) Evaluate if I provided my name, current role, background, experience, skills, and accomplishments.\n\n"
+        f"  1.3 Transition to pitch: Strictly assess the smoothness of the transition from the initial greeting to my main pitch.\n\n"
+        
+        f"2. Content/Message\n\n"
+        f"  2.1 Problem & Need: Strictly assess does it clearly identify a specific problem?, "
+        f"does it establish the urgency or importance of addressing this problem?\n\n"
+        f"  2.2 Explained the benefit/payoff: Strictly determine if I effectively explained the benefit or payoff of my project.\n\n"
+        f"  2.3 Relayed relevant features: Strictly evaluate if I relayed relevant features.\n\n"
+        
+        f"3. Close\n\n"
+        f"  3.1 Asked for the next step: Assess if I asked for the next step, such as a call or interview.\n\n"
+        f"  3.2 Clear Ending: Evaluate if I provided a clear ending to my pitch that is expected for that particular scenario '{st.session_state.scenario_title}'.\n\n"
+        
+        f"4. Communication:\n\n"
+        f"  4.1 Verbiage: Assess the choice of words and whether they were concise and professional "
+        f"if required for that particular scenario '{st.session_state.scenario_title}'.\n\n"
+        f"  4.2 Time: Assess if I kept within the time limit specified (between 60 and 90 seconds).\n\n"
+        f"  4.3 Filler Words: Assess if I used these {filler_word_counts} too many times.\n\n"
+        
+        f"Emotions: Assess from the predicted emotions if I kept with the right emotions for the scenario.\n\n"
+        f"Relevancy: Strictly assess the context of the pitch provided by me is relevant to the exact required context of the scenario "
+        f"which is '[{st.session_state.scenario}]'.\n\n"
+        
+        f"Evaluation Instructions:\n"
+        f"Strictly provide scores for that particular scenario {st.session_state.scenario_title} on a scale of 0-10 for each item, "
+        f"with 10 being the best possible score and 0 representing the absence of the skill or behavior being evaluated.\n"
+        f"Additionally, provide relevant examples of words or sentences and compare with those used by me.\n"
+        f"Your assessment of the pitch's strengths and areas for improvement (if required) or suggested improvements "
+        f"(if required) where I missed and that's necessary for that scenario '{st.session_state.scenario_title}' with relevant examples, "
+        f"will provide valuable insights for refining future communication efforts (if required). "
+        f"Do not use NA (Not Applicable) for scores. Don't respond as a third person like 'the speaker'; respond like mentioning 'you' "
+        f"and evaluate as me.\n\n"
+        
+        f"You must give me an example of how the pitch can be delivered with proper phrases/terms, covering all the above aspects mentioned "
+        f"in the evaluation within the specified duration.\n\n"
+    )
+
+    prompt_with_speech = (
+        f"{prompt}\n\n"
+        f"Scenario I selected: '{st.session_state.scenario}'.\n\n"
+        f"My Pitch extracted from audio:\n{extracted_text}\n\n"
+        f"Predicted Emotions from audio: {emotions}\n"
+        f"Duration of my pitch/speech: {duration} seconds\n\n."
+    )
+
     # Generate response based on the prompt
     response = model.generate_content(prompt_with_speech)
 
@@ -319,6 +400,32 @@ def main():
                                     filler_words_chart=go.Figure(go.Bar(x=list(filler_words_count.keys()),y=list(filler_words_count.values())),layout=dict(barcornerradius=15),)
                                     filler_words_chart.update_layout(title='Filler Words Count',xaxis_title='Filler Words',yaxis_title='Count',xaxis=dict(showline=False))
                                     st.plotly_chart(filler_words_chart,use_container_width=True)
+
+                                l,r=st.columns([2,1])
+
+                                with l:
+                                    non_filler=[ t for t in extracted_text.lower().split() if t not in filler_words]
+                                    word_freq=Counter(non_filler)
+                                    wordcloud=WordCloud(width=1200,height=600,background_color="rgba(0,0,0,0)").generate_from_frequencies(word_freq)
+                                    fig,ax=plt.subplots(frameon=False)
+                                    # Plot word cloud using Plotly
+                                    ax.imshow(wordcloud,interpolation='bilinear')
+                                    ax.axis('off')
+                                    #fig=go.Figure(go.Image(z=wordcloud.to_array(),hoverinfo='skip'))
+
+                                    # Update layout
+                                    # #fig.update_layout(title='Word Cloud',  
+                                    #                 xaxis=dict(
+                                    #                         showticklabels=False,
+                                    #                     ),
+                                    #                 yaxis=dict(
+                                    #                     showticklabels=False,
+                                    #                 ))
+                                    st.subheader("The Most Used Terms")
+                                    st.pyplot(fig,use_container_width=True)
+                                with r:
+                                    rate,label=calculate_speech_rate(extracted_text,30)
+                                    st.markdown(f"<h3 style='padding-top:30%;'><b>Rate of Speech</b> is <br> <span style='font-size:35px;font-weight: 700;'><b>{rate}</b></span> words per minute (WPM) which is <span style='font-size:35px;'><b>{label}</b></span></h3>", unsafe_allow_html=True)
                             else:
                                 st.warning("You must record the audio to evaluate!")
                       

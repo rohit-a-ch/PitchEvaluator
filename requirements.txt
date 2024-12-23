@@ -16,3 +16,4 @@ python-dotenv
 audio-recorder-streamlit
 Pillow
 openai-whisper
+wordcloud
