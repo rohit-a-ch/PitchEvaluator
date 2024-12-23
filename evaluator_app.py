@@ -24,6 +24,8 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import TreebankWordTokenizer
 from collections import Counter
+import whisper
+
 load_dotenv()
 # Configure API client with your API key
 genai.configure(api_key=os.getenv("API_KEY"))
