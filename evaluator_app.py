@@ -11,7 +11,7 @@ import torch
 from transformers import Wav2Vec2Tokenizer, Wav2Vec2ForCTC
 import tensorflow as tf
 from tensorflow import keras
-from keras.models import load_model
+from keras._tf_keras.keras.saving import load_model
 import google.generativeai as genai
 import io
 import os
