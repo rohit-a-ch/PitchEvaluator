@@ -271,29 +271,24 @@ def main():
                 st.text("")
                 st.header("Record your pitch")
                 #st.session_state.duration = st.slider("Set Recording Duration (seconds)", min_value=10, max_value=90, value=60)
-                audio_data = audio_recorder(
-                                            text="Click To Start / Stop Recording",
-                                            sample_rate=44_100,  # Text displayed on the button (default: "Click to record")
-                                            recording_color="#e8b62c",  # Color for the recording state (default: "#ff0000")
-                                            neutral_color="#6aa36f",  # Color for the neutral state (default: "#d3d3d3")  # Font Awesome icon name for the button (default: "microphone")
-                                            icon_size="2x",  # Size of the button icon (default: "3x")
-                                            pause_threshold=5
-                                        )
+                audio_data = st.audio_input("Record your audio")
+                # audio_recorder(
+                #                             text="Click To Start / Stop Recording",
+                #                             sample_rate=44_100,  # Text displayed on the button (default: "Click to record")
+                #                             recording_color="#e8b62c",  # Color for the recording state (default: "#ff0000")
+                #                             neutral_color="#6aa36f",  # Color for the neutral state (default: "#d3d3d3")  # Font Awesome icon name for the button (default: "microphone")
+                #                             icon_size="2x",  # Size of the button icon (default: "3x")
+                #                             pause_threshold=5
+                #                         )
                 if audio_data!=None:
                         st.session_state.audio_recorded=True
-                        st.session_state.recorded_audio =  io.BytesIO(audio_data)
+                        st.session_state.recorded_audio =  audio_data
                         #print("Recorded",st.session_state.recorded_audio)
                     
         if "scenario_selected" in st.session_state and st.session_state.scenario_selected:
             # Wait for the specified duration and then stop recording
                 if "audio_recorded" in st.session_state and st.session_state.audio_recorded:
-                    with st.spinner("Preparing audio...."):
-                        st.session_state.audio,st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
-                        st.subheader("Your Pitch audio")
-                        st.audio( st.session_state.audio, format="audio/wav",sample_rate=st.session_state.sr)
-                        
-                        st.write(f"Duration: {round(st.session_state.duration,2)} seconds")
-                    
+                    st.session_state.audio,st.session_state.duration,st.session_state.sr = get_audio_duration(st.session_state.recorded_audio)
                     evaluate_btn=st.button("Evaluate", key="evaluate_button",use_container_width=True)
                     if evaluate_btn:
                             if "audio" in st.session_state and st.session_state.audio.any():
